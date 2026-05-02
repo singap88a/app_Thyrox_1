@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ENDPOINTS } from "../constants/api";
-
+// ////
 export default function HomeScreen() {
   const router = useRouter();
   const [patientId, setPatientId] = useState("");
