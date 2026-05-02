@@ -7,7 +7,7 @@ const API_BASE_URL = "http://192.168.1.6:5153";
 interface Thyroid3DViewerProps {
   diseaseType?: string;
 }
-
+// ////
 export default function Thyroid3DViewer({ diseaseType }: Thyroid3DViewerProps) {
   const hasDisease = diseaseType && diseaseType.toLowerCase() !== "normal" && diseaseType.toLowerCase() !== "benign";
   
