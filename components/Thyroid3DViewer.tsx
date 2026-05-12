@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import { WebView } from "react-native-webview";
 
-const API_BASE_URL = "http://192.168.1.6:5153";
+import { API_BASE_URL } from "../constants/api";
 
 interface Thyroid3DViewerProps {
   diseaseType?: string;
@@ -101,8 +101,8 @@ export default function Thyroid3DViewer({ diseaseType }: Thyroid3DViewerProps) {
 
           model.traverse(n => { 
             if (n.isMesh) { 
-              n.material.transparent = true; 
-              n.material.opacity = 0.85; 
+              n.material.transparent = false; 
+              n.material.opacity = 1.0; 
             } 
           });
           group.add(model);

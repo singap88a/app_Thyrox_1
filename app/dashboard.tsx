@@ -5,10 +5,11 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  SafeAreaView,
   Dimensions,
   Image,
+  Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
 import Thyroid3DViewer from "../components/Thyroid3DViewer";
@@ -517,7 +518,7 @@ export default function DashboardScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#0a0f1e" }}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 10 : 0 }}>
         {/* Top Bar */}
         <View className="flex-row items-center px-6 pt-4 pb-3">
           <TouchableOpacity
