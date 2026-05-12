@@ -5,7 +5,7 @@
 // iOS simulator / Expo Go on real device: use your machine's LAN IP
 // Example: "http://192.168.1.100:5127"
 
-export const API_BASE_URL = "http://192.168.1.6:5153"; // Points to the backend running on your PC
+export const API_BASE_URL = "https://thyrocarex.runasp.net"; // Points to the live server URL
 
 export const ENDPOINTS = {
   patientLookup: (id: number | string) =>
