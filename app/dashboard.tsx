@@ -55,6 +55,7 @@ interface PatientData {
   phoneNumber: string;
   address?: string;
   registrationAt: string;
+  doctorID?: number;
   height: number;
   weight: number;
   bmi?: number;
@@ -481,6 +482,15 @@ export default function DashboardScreen() {
           <Text className="text-white text-[16px] font-black uppercase tracking-widest flex-1">
             My Dashboard
           </Text>
+          <TouchableOpacity 
+            onPress={() => router.push({
+              pathname: "/chat",
+              params: { patientId: patient?.patientID, doctorId: patient?.doctorID || "1" }
+            })}
+            className="w-10 h-10 rounded-2xl bg-[#111827] border border-[#1e2d4a] items-center justify-center mr-3"
+          >
+            <Text style={{ fontSize: 18 }}>💬</Text>
+          </TouchableOpacity>
           <Text className="text-[#00d4ff] text-[12px] font-bold">Syrux</Text>
         </View>
 
