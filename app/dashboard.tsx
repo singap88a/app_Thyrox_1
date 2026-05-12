@@ -12,6 +12,10 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
 import Thyroid3DViewer from "../components/Thyroid3DViewer";
+import * as signalR from "@microsoft/signalr";
+import axios from "axios";
+import { useEffect, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
@@ -159,6 +163,8 @@ export default function DashboardScreen() {
   const { patientData: patientDataStr } = useLocalSearchParams<{ patientData: string }>();
   const [activeTab, setActiveTab] = useState<"info" | "results" | "history">("info");
   const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
 
   let patient: PatientData | null = null;
   try {
@@ -166,6 +172,47 @@ export default function DashboardScreen() {
   } catch {
     patient = null;
   }
+
+  const myId = patient?.patientID?.toString();
+
+  const fetchUnreadCount = useCallback(async () => {
+    if (!myId) return;
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/Chat/UnreadCount/${myId}`);
+      setUnreadCount(res.data);
+    } catch (err) {
+      console.error("Failed to fetch unread count", err);
+    }
+  }, [myId]);
+
+  useEffect(() => {
+    if (myId) {
+      fetchUnreadCount();
+      
+      const hubUrl = `${API_BASE_URL}/chatHub`;
+      const newConnection = new signalR.HubConnectionBuilder()
+        .withUrl(`${hubUrl}?userId=${myId}`, {
+          skipNegotiation: true,
+          transport: signalR.HttpTransportType.WebSockets,
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      newConnection.on("ReceiveMessage", (message) => {
+        if (message.receiverId === myId) {
+          setUnreadCount(prev => prev + 1);
+        }
+      });
+
+      newConnection.start()
+        .then(() => setConnection(newConnection))
+        .catch(err => console.error("SignalR Dashboard Error", err));
+
+      return () => {
+        newConnection.stop();
+      };
+    }
+  }, [myId]);
 
   if (!patient) {
     return (
@@ -483,13 +530,35 @@ export default function DashboardScreen() {
             My Dashboard
           </Text>
           <TouchableOpacity 
-            onPress={() => router.push({
-              pathname: "/chat",
-              params: { patientId: patient?.patientID, doctorId: patient?.doctorID || "1" }
-            })}
+            onPress={() => {
+              setUnreadCount(0); // Clear badge when entering chat
+              router.push({
+                pathname: "/chat",
+                params: { patientId: patient?.patientID, doctorId: patient?.doctorID || "1" }
+              });
+            }}
             className="w-10 h-10 rounded-2xl bg-[#111827] border border-[#1e2d4a] items-center justify-center mr-3"
           >
-            <Text style={{ fontSize: 18 }}>💬</Text>
+            <Ionicons name="chatbubble-ellipses" size={20} color="#00d4ff" />
+            {unreadCount > 0 && (
+              <View style={{
+                position: 'absolute',
+                top: -5,
+                right: -5,
+                backgroundColor: '#ef4444',
+                borderRadius: 10,
+                width: 18,
+                height: 18,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 2,
+                borderColor: '#111827'
+              }}>
+                <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
           <Text className="text-[#00d4ff] text-[12px] font-bold">Syrux</Text>
         </View>
