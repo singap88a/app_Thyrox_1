@@ -34,7 +34,7 @@ export default function Thyroid3DViewer({ diseaseType }: Thyroid3DViewerProps) {
           pointer-events: none;
           transform: translate(-50%, -100%);
           margin-top: -15px;
-          display: ${hasDisease ? 'block' : 'none'};
+          display: none;
         }
         .disease-title { font-weight: 900; color: #f87171; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-size: 9px; }
       </style>

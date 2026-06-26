@@ -104,6 +104,13 @@ const formatConfidence = (c?: number) => {
   return `${pct.toFixed(1)}%`;
 };
 
+const getValidUri = (path?: string) => {
+  if (!path) return '';
+  let p = path.replace(/\\/g, '/');
+  if (p.startsWith('/')) p = p.substring(1);
+  return p.startsWith('http') ? p : `${API_BASE_URL}/${p}`;
+};
+
 // ── Info Row ───────────────────────────────────────────
 const InfoRow = ({
   label,
@@ -153,16 +160,17 @@ const SectionCard = ({
 
 // ── Tab Bar ────────────────────────────────────────────
 const TABS = [
-  { id: "info",    label: "Patient Info" },
-  { id: "results", label: "Diagnosis"    },
-  { id: "history", label: "History"      },
+  { id: "info",    label: "Info" },
+  { id: "results", label: "Diagnosis" },
+  { id: "anatomy", label: "3D Map" },
+  { id: "history", label: "History" },
 ];
 
 // ══════════════════════════════════════════════════════
 export default function DashboardScreen() {
   const router = useRouter();
   const { patientData: patientDataStr } = useLocalSearchParams<{ patientData: string }>();
-  const [activeTab, setActiveTab] = useState<"info" | "results" | "history">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "results" | "anatomy" | "history">("info");
   const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
@@ -304,6 +312,11 @@ export default function DashboardScreen() {
       const tests = patient!.tests || [];
       const selectedTest = tests.find(t => t.testId === selectedTestId) || tests[0];
 
+      const overlayImages = selectedTest?.overlayImageUrl ? selectedTest.overlayImageUrl.split(',').filter(Boolean) : [];
+      const maskImages = selectedTest?.maskImageUrl ? selectedTest.maskImageUrl.split(',').filter(Boolean) : [];
+      const roiImages = selectedTest?.roiImageUrl ? selectedTest.roiImageUrl.split(',').filter(Boolean) : [];
+      const numImages = Math.max(overlayImages.length, maskImages.length, roiImages.length);
+
       return (
         <>
           <View className="mb-6">
@@ -312,61 +325,58 @@ export default function DashboardScreen() {
             </Text>
           </View>
 
-          {/* 3D Model Viewer */}
-          <SectionCard title="3D Anatomical Analysis" accentColor="#f472b6">
-            <Thyroid3DViewer diseaseType={selectedTest?.classification} />
-          </SectionCard>
-
-          {/* Latest Scan Image & AI Masks */}
-          {selectedTest?.imagePath && (
-            <SectionCard title="Medical Scan Images" accentColor="#0ea5e9">
-              {/* Original Ultrasound */}
-              <View className="overflow-hidden rounded-2xl border border-[#1e2d4a] bg-[#0d1520] mb-4">
-                <Image 
-                  source={{ uri: selectedTest.imagePath.startsWith('http') ? selectedTest.imagePath : `${API_BASE_URL}/${selectedTest.imagePath}` }} 
-                  style={{ width: '100%', height: 220 }}
-                  resizeMode="cover"
-                />
-                <Text className="text-center text-[#6b7280] text-[10px] font-bold uppercase tracking-widest py-2">Original Ultrasound</Text>
-              </View>
-
-              {/* Segmentation Mask */}
-              {selectedTest?.maskImageUrl && (
-                <View className="overflow-hidden rounded-2xl border border-[#1e2d4a] bg-[#0d1520] mb-4">
-                  <Image 
-                    source={{ uri: selectedTest.maskImageUrl.startsWith('http') ? selectedTest.maskImageUrl : `${API_BASE_URL}/${selectedTest.maskImageUrl}` }} 
-                    style={{ width: '100%', height: 220 }}
-                    resizeMode="cover"
-                  />
-                  <Text className="text-center text-[#6b7280] text-[10px] font-bold uppercase tracking-widest py-2">Segmentation Mask</Text>
+          {/* AI Vision Scans - Supports Multiple Images */}
+          {numImages > 0 && Array.from({ length: numImages }).map((_, idx) => (
+            <SectionCard key={`scan-${idx}`} title={`AI Vision Scan ${numImages > 1 ? idx + 1 : ''}`} accentColor="#0ea5e9">
+              {/* Detection (Overlay) */}
+              {overlayImages[idx] && (
+                <View className="mb-5">
+                  <View className="flex-row justify-between items-center px-1 mb-2">
+                    <Text className="text-[#6b7280] text-[11px] font-black uppercase tracking-widest">Detection</Text>
+                  </View>
+                  <View className="overflow-hidden rounded-2xl border border-[#1e2d4a] bg-[#0d1520]">
+                    <Image 
+                      source={{ uri: getValidUri(overlayImages[idx].trim()) }} 
+                      style={{ width: '100%', height: 220 }}
+                      resizeMode="cover"
+                    />
+                  </View>
                 </View>
               )}
 
-              {/* AI Overlay */}
-              {selectedTest?.overlayImageUrl && (
-                <View className="overflow-hidden rounded-2xl border border-[#1e2d4a] bg-[#0d1520] mb-4">
-                  <Image 
-                    source={{ uri: selectedTest.overlayImageUrl.startsWith('http') ? selectedTest.overlayImageUrl : `${API_BASE_URL}/${selectedTest.overlayImageUrl}` }} 
-                    style={{ width: '100%', height: 220 }}
-                    resizeMode="cover"
-                  />
-                  <Text className="text-center text-[#6b7280] text-[10px] font-bold uppercase tracking-widest py-2">AI Overlay</Text>
+              {/* Segmentation (Mask) */}
+              {maskImages[idx] && (
+                <View className="mb-5">
+                  <View className="flex-row justify-between items-center px-1 mb-2">
+                    <Text className="text-[#6b7280] text-[11px] font-black uppercase tracking-widest">Segmentation</Text>
+                  </View>
+                  <View className="overflow-hidden rounded-2xl border border-[#1e2d4a] bg-[#0d1520]">
+                    <Image 
+                      source={{ uri: getValidUri(maskImages[idx].trim()) }} 
+                      style={{ width: '100%', height: 220 }}
+                      resizeMode="cover"
+                    />
+                  </View>
                 </View>
               )}
 
-              {/* ROI Image */}
-              {selectedTest?.roiImageUrl && (
-                <View className="overflow-hidden rounded-2xl border border-[#1e2d4a] bg-[#0d1520] mb-4">
-                  <Image 
-                    source={{ uri: selectedTest.roiImageUrl.startsWith('http') ? selectedTest.roiImageUrl : `${API_BASE_URL}/${selectedTest.roiImageUrl}` }} 
-                    style={{ width: '100%', height: 220 }}
-                    resizeMode="cover"
-                  />
-                  <Text className="text-center text-[#6b7280] text-[10px] font-bold uppercase tracking-widest py-2">Region of Interest (ROI)</Text>
+              {/* ROI Area */}
+              {roiImages[idx] && (
+                <View className="mb-2">
+                  <View className="flex-row justify-between items-center px-1 mb-2">
+                    <Text className="text-[#6b7280] text-[11px] font-black uppercase tracking-widest">ROI Area</Text>
+                  </View>
+                  <View className="overflow-hidden rounded-2xl border border-[#1e2d4a] bg-[#0d1520]">
+                    <Image 
+                      source={{ uri: getValidUri(roiImages[idx].trim()) }} 
+                      style={{ width: '100%', height: 220 }}
+                      resizeMode="cover"
+                    />
+                  </View>
                 </View>
               )}
             </SectionCard>
-          )}
+          ))}
 
           {/* Detailed AI Assessment */}
           {selectedTest && (
@@ -374,26 +384,26 @@ export default function DashboardScreen() {
               <View className="bg-[#111827] p-5 rounded-2xl border border-[#1e2d4a] gap-4">
                 
                 {/* Status & Risk */}
-                <View className="flex-row justify-between border-b border-[#1e2d4a] pb-3">
-                  <View>
-                    <Text className="text-[#6b7280] text-[10px] font-bold uppercase tracking-widest">Diagnosis</Text>
-                    <Text className="text-white text-[16px] font-black mt-1 capitalize">{selectedTest.diagnosisResult || 'N/A'}</Text>
+                <View className="flex-row justify-between border-b border-[#1e2d4a] pb-3 gap-2">
+                  <View className="flex-1 pr-2">
+                    <Text className="text-[#6b7280] text-[9px] font-bold uppercase tracking-widest">Diagnosis</Text>
+                    <Text className="text-white text-[14px] font-black mt-1 capitalize" numberOfLines={2}>{selectedTest.diagnosisResult || 'N/A'}</Text>
                   </View>
-                  <View className="items-end">
-                    <Text className="text-[#6b7280] text-[10px] font-bold uppercase tracking-widest">Risk Level</Text>
-                    <Text className="text-[#ef4444] text-[16px] font-black mt-1 capitalize">{selectedTest.riskLevel || 'N/A'}</Text>
+                  <View className="flex-1 items-end pl-2">
+                    <Text className="text-[#6b7280] text-[9px] font-bold uppercase tracking-widest">Risk Level</Text>
+                    <Text className="text-[#ef4444] text-[14px] font-black mt-1 capitalize">{selectedTest.riskLevel || 'N/A'}</Text>
                   </View>
                 </View>
 
                 {/* TIRADS & Bethesda */}
-                <View className="flex-row justify-between border-b border-[#1e2d4a] pb-3">
-                  <View>
-                    <Text className="text-[#6b7280] text-[10px] font-bold uppercase tracking-widest">TIRADS Stage</Text>
-                    <Text className="text-[#f472b6] text-[14px] font-bold mt-1">{selectedTest.tiradsStage || 'N/A'}</Text>
+                <View className="flex-row justify-between border-b border-[#1e2d4a] pb-3 gap-2">
+                  <View className="flex-1 pr-2">
+                    <Text className="text-[#6b7280] text-[9px] font-bold uppercase tracking-widest">TIRADS Stage</Text>
+                    <Text className="text-[#f472b6] text-[12px] font-bold mt-1" numberOfLines={2}>{selectedTest.tiradsStage || 'N/A'}</Text>
                   </View>
-                  <View className="items-end">
-                    <Text className="text-[#6b7280] text-[10px] font-bold uppercase tracking-widest">Bethesda Category</Text>
-                    <Text className="text-[#a78bfa] text-[14px] font-bold mt-1">{selectedTest.bethesdaLabel || 'N/A'}</Text>
+                  <View className="flex-1 items-end pl-2">
+                    <Text className="text-[#6b7280] text-[9px] font-bold uppercase tracking-widest">Bethesda</Text>
+                    <Text className="text-[#a78bfa] text-[12px] font-bold mt-1 text-right" numberOfLines={2}>{selectedTest.bethesdaLabel || 'N/A'}</Text>
                   </View>
                 </View>
 
@@ -448,6 +458,25 @@ export default function DashboardScreen() {
               </Text>
             </View>
           )}
+        </>
+      );
+    }
+
+    // ── 3D ANATOMY ────────────────────────────────────
+    if (activeTab === "anatomy") {
+      const tests = patient!.tests || [];
+      const selectedTest = tests.find(t => t.testId === selectedTestId) || tests[0];
+
+      return (
+        <>
+          <View className="mb-6">
+            <Text className="text-[#6b7280] text-[13px] font-bold">
+              Test Date: {selectedTest ? formatDate(selectedTest.createdAt) : 'N/A'}
+            </Text>
+          </View>
+          <SectionCard title="3D Anatomical Analysis" accentColor="#f472b6">
+            <Thyroid3DViewer diseaseType={selectedTest?.classification} />
+          </SectionCard>
         </>
       );
     }
@@ -561,7 +590,7 @@ export default function DashboardScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <Text className="text-[#00d4ff] text-[12px] font-bold">Syrux</Text>
+          <Text className="text-[#00d4ff] text-[12px] font-bold">Thyrax</Text>
         </View>
 
         {/* Patient Header Card */}
@@ -591,18 +620,18 @@ export default function DashboardScreen() {
         </View>
 
         {/* Tab Bar */}
-        <View className="mx-6 mb-4 bg-[#111827] rounded-2xl p-1.5 flex-row border border-[#1e2d4a]">
+        <View className="mx-6 mb-4 bg-[#111827] rounded-2xl p-1 flex-row border border-[#1e2d4a]">
           {TABS.map((tab) => (
             <TouchableOpacity
               key={tab.id}
               onPress={() => setActiveTab(tab.id as any)}
-              className={`flex-1 py-3 rounded-xl items-center ${
+              className={`flex-1 py-2.5 rounded-xl items-center justify-center ${
                 activeTab === tab.id ? "bg-[#00d4ff]" : ""
               }`}
               activeOpacity={0.8}
             >
               <Text
-                className={`text-[11px] font-black uppercase tracking-widest ${
+                className={`text-[10px] font-bold uppercase tracking-wider ${
                   activeTab === tab.id ? "text-[#0a0f1e]" : "text-[#6b7280]"
                 }`}
               >

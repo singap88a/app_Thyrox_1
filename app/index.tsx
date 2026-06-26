@@ -10,6 +10,7 @@ import {
   Animated,
   StatusBar,
   ScrollView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -95,14 +96,13 @@ export default function HomeScreen() {
               {/* Brand Header */}
               <View className="items-center mb-14">
                 {/* Logo mark */}
-                <View className="w-20 h-20 rounded-[24px] bg-[#00d4ff] items-center justify-center mb-5 shadow-lg">
-                  <View className="w-10 h-10 rounded-full bg-[#0a0f1e] items-center justify-center">
-                    <View className="w-5 h-5 rounded-full bg-[#00d4ff]" />
-                  </View>
-                </View>
+                <Image 
+                  source={require('../assets/images/logo_edit.png')} 
+                  style={{ width: 140, height: 100, resizeMode: 'contain', marginBottom: 16 }} 
+                />
 
                 <Text className="text-white text-[38px] font-bold tracking-widest mb-1">
-                  SYRUX
+                  THYRAX
                 </Text>
                 <Text className="text-[#00d4ff] text-[13px] font-medium tracking-[0.3em] uppercase">
                   Patient Portal
