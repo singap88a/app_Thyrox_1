@@ -551,10 +551,10 @@ export default function DashboardScreen() {
         {/* Top Bar */}
         <View className="flex-row items-center px-6 pt-4 pb-3">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.replace("/")}
             className="w-10 h-10 rounded-2xl bg-[#111827] border border-[#1e2d4a] items-center justify-center mr-4"
           >
-            <Text className="text-white text-[16px] font-bold">←</Text>
+            <Ionicons name="log-out-outline" size={20} color="#ef4444" />
           </TouchableOpacity>
           <Text className="text-white text-[16px] font-black uppercase tracking-widest flex-1">
             My Dashboard
