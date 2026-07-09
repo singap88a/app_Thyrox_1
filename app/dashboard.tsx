@@ -50,6 +50,9 @@ interface TestDto {
   overlayImageUrl?: string;
   maskImageUrl?: string;
   roiImageUrl?: string;
+  ataLevel?: string;
+  needsManualReview?: boolean;
+  consensus?: string;
 }
 
 interface PatientData {
@@ -395,17 +398,27 @@ export default function DashboardScreen() {
                   </View>
                 </View>
 
-                {/* TIRADS & Bethesda */}
+                {/* TIRADS, Bethesda & ATA */}
                 <View className="flex-row justify-between border-b border-[#1e2d4a] pb-3 gap-2">
                   <View className="flex-1 pr-2">
                     <Text className="text-[#6b7280] text-[9px] font-bold uppercase tracking-widest">TIRADS Stage</Text>
                     <Text className="text-[#f472b6] text-[12px] font-bold mt-1" numberOfLines={2}>{selectedTest.tiradsStage || 'N/A'}</Text>
+                  </View>
+                  <View className="flex-1 px-2 border-x border-[#1e2d4a]">
+                    <Text className="text-[#6b7280] text-[9px] font-bold uppercase tracking-widest">ATA Level</Text>
+                    <Text className="text-[#38bdf8] text-[12px] font-bold mt-1 text-center" numberOfLines={2}>{selectedTest.ataLevel || 'N/A'}</Text>
                   </View>
                   <View className="flex-1 items-end pl-2">
                     <Text className="text-[#6b7280] text-[9px] font-bold uppercase tracking-widest">Bethesda</Text>
                     <Text className="text-[#a78bfa] text-[12px] font-bold mt-1 text-right" numberOfLines={2}>{selectedTest.bethesdaLabel || 'N/A'}</Text>
                   </View>
                 </View>
+
+                {selectedTest.needsManualReview && (
+                  <View className="bg-[#451a03] p-3 rounded-lg mt-2 border border-[#78350f]">
+                     <Text className="text-[#fbbf24] text-[11px] font-bold text-center">⚠️ MANUAL REVIEW NEEDED</Text>
+                  </View>
+                )}
 
                 {/* Clinical Recommendation */}
                 <View>
